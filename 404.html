@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rival Launcher</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .launcher-container {
+      text-align: center;
+      padding: 40px;
+      max-width: 500px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .function-info {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      color: #a0aec0;
+      background: rgba(255,255,255,0.1);
+      padding: 8px 16px;
+      border-radius: 8px;
+      margin-bottom: 32px;
+      word-break: break-all;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status {
+      color: #a0aec0;
+      font-size: 14px;
+    }
+
+    .error-state, .cancelled-state {
+      display: none;
+    }
+
+    .error-state h2, .cancelled-state h2 {
+      color: #fc8181;
+      margin-bottom: 16px;
+    }
+
+    .cancelled-state h2 {
+      color: #f6ad55;
+    }
+
+    .error-message {
+      background: rgba(252, 129, 129, 0.1);
+      border: 1px solid rgba(252, 129, 129, 0.3);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #fc8181;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      margin: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .no-extension {
+      display: none;
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(252, 129, 129, 0.1);
+      border: 1px solid rgba(252, 129, 129, 0.3);
+      border-radius: 8px;
+    }
+
+    .no-extension a {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher-container">
+    <div class="logo">⚡</div>
+    <h1>Rival Function Launcher</h1>
+    <div class="function-info" id="function-info">Loading...</div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <p class="status" id="status-text">Connecting to extension...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="error-state">
+      <h2>Execution Failed</h2>
+      <div class="error-message" id="error-message"></div>
+      <button class="btn btn-primary" id="retry-btn">Retry</button>
+      <button class="btn btn-secondary" id="close-btn">Close</button>
+    </div>
+
+    <!-- Cancelled State -->
+    <div class="cancelled-state" id="cancelled-state">
+      <h2>Execution Cancelled</h2>
+      <p style="color: #a0aec0; margin-bottom: 24px;">You cancelled the function execution.</p>
+      <button class="btn btn-primary" id="retry-cancelled-btn">Try Again</button>
+      <button class="btn btn-secondary" id="close-cancelled-btn">Close</button>
+    </div>
+
+    <!-- No Extension Warning -->
+    <div class="no-extension" id="no-extension">
+      <p>Rival Extension not detected. Please <a href="#">install the extension</a> to use this launcher.</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // DOM Elements
+      const loadingState = document.getElementById('loading-state');
+      const errorState = document.getElementById('error-state');
+      const cancelledState = document.getElementById('cancelled-state');
+      const noExtension = document.getElementById('no-extension');
+      const statusText = document.getElementById('status-text');
+      const functionInfo = document.getElementById('function-info');
+      const errorMessage = document.getElementById('error-message');
+
+      // Parse function ID and version from URL
+      // Supports: /functionId?v=version or ?fn=functionId&v=version
+      function parseUrl() {
+        const path = window.location.pathname;
+        const params = new URLSearchParams(window.location.search);
+
+        let functionId = null;
+        let version = null;
+
+        // Try path-based: /functionId?v=version
+        if (path && path !== '/' && path !== '/index.html') {
+          functionId = path.replace(/^\//, '').replace(/\/$/, '');
+        }
+
+        // Try query param: ?fn=functionId
+        if (!functionId) {
+          functionId = params.get('fn') || params.get('functionId');
+        }
+
+        // Version from query param
+        version = params.get('v') || params.get('version');
+
+        // Path after functionId (optional)
+        const pathParam = params.get('path');
+
+        return { functionId, version, path: pathParam };
+      }
+
+      function updateStatus(text) {
+        statusText.textContent = text;
+      }
+
+      function showError(message) {
+        loadingState.style.display = 'none';
+        cancelledState.style.display = 'none';
+        errorState.style.display = 'block';
+        errorMessage.textContent = message;
+      }
+
+      function showCancelled() {
+        loadingState.style.display = 'none';
+        errorState.style.display = 'none';
+        cancelledState.style.display = 'block';
+      }
+
+      function showNoExtension() {
+        loadingState.style.display = 'none';
+        noExtension.style.display = 'block';
+      }
+
+      // Listen for messages from content script
+      window.addEventListener('message', (event) => {
+        // Only accept messages from our content script
+        if (event.source !== window) return;
+        if (!event.data || !event.data.type) return;
+
+        const { type, data } = event.data;
+
+        if (type === 'RIVAL_STATUS') {
+          updateStatus(data.status);
+        }
+
+        if (type === 'RIVAL_ERROR') {
+          showError(data.error);
+        }
+
+        if (type === 'RIVAL_CANCELLED') {
+          showCancelled();
+        }
+
+        if (type === 'RIVAL_INJECT_HTML') {
+          // Inject the HTML - this is the magic moment!
+          document.open();
+          document.write(data.html);
+          document.close();
+        }
+
+        if (type === 'RIVAL_EXTENSION_READY') {
+          updateStatus('Extension connected. Waiting for confirmation...');
+        }
+      });
+
+      // Notify content script that page is ready
+      function notifyReady() {
+        const { functionId, version, path } = parseUrl();
+
+        if (!functionId || !version) {
+          showError('Missing function ID or version in URL');
+          return;
+        }
+
+        functionInfo.textContent = `${functionId} (v${version})`;
+
+        // Post message for content script to pick up
+        window.postMessage({
+          type: 'RIVAL_PAGE_READY',
+          data: { functionId, version, path }
+        }, '*');
+
+        // Set timeout to detect missing extension
+        setTimeout(() => {
+          if (statusText.textContent === 'Connecting to extension...') {
+            showNoExtension();
+          }
+        }, 3000);
+      }
+
+      // Retry handlers
+      document.getElementById('retry-btn').addEventListener('click', () => {
+        errorState.style.display = 'none';
+        loadingState.style.display = 'block';
+        updateStatus('Retrying...');
+        notifyReady();
+      });
+
+      document.getElementById('retry-cancelled-btn').addEventListener('click', () => {
+        cancelledState.style.display = 'none';
+        loadingState.style.display = 'block';
+        updateStatus('Retrying...');
+        notifyReady();
+      });
+
+      document.getElementById('close-btn').addEventListener('click', () => window.close());
+      document.getElementById('close-cancelled-btn').addEventListener('click', () => window.close());
+
+      // Initialize
+      notifyReady();
+    })();
+  </script>
+</body>
+</html>
