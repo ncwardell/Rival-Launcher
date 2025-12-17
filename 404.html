@@ -11,168 +11,271 @@
       box-sizing: border-box;
     }
 
+    :root {
+      --primary-blue: #2563eb;
+      --primary-blue-dark: #1d4ed8;
+      --primary-blue-light: #3b82f6;
+      --background-dark: #0f172a;
+      --text-light: #94a3b8;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: white;
+    }
+
+    .launcher-container {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      padding: 20px;
     }
 
-    .launcher-container {
+    .loading-state, .error-state, .cancelled-state {
       text-align: center;
-      padding: 40px;
-      max-width: 500px;
+      max-width: 400px;
+    }
+
+    .logo-wrapper {
+      margin-bottom: 40px;
     }
 
     .logo {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 20px;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+      border-radius: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.5));
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    h1 {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    .logo svg {
+      width: 60px;
+      height: 60px;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.5));
+      }
+      50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 50px rgba(37, 99, 235, 0.8));
+      }
+    }
+
+    .loading-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .loading-progress {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, var(--primary-blue), var(--primary-blue-light), var(--primary-blue));
+      border-radius: 2px;
+      animation: loading 1.5s ease-in-out infinite;
+    }
+
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(200%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .status-text {
+      font-size: 16px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      animation: fadeInOut 2s ease-in-out infinite;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
     }
 
     .function-info {
-      font-family: 'Monaco', 'Menlo', monospace;
       font-size: 12px;
-      color: #a0aec0;
-      background: rgba(255,255,255,0.1);
+      color: var(--primary-blue-light);
+      font-family: 'Monaco', 'Menlo', monospace;
+      background: rgba(37, 99, 235, 0.1);
       padding: 8px 16px;
       border-radius: 8px;
-      margin-bottom: 32px;
       word-break: break-all;
-    }
-
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 24px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .status {
-      color: #a0aec0;
-      font-size: 14px;
     }
 
     .error-state, .cancelled-state {
       display: none;
     }
 
-    .error-state h2, .cancelled-state h2 {
-      color: #fc8181;
-      margin-bottom: 16px;
+    .error-icon, .cancelled-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
     }
 
-    .cancelled-state h2 {
-      color: #f6ad55;
+    .error-icon {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
     }
 
-    .error-message {
-      background: rgba(252, 129, 129, 0.1);
-      border: 1px solid rgba(252, 129, 129, 0.3);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 24px;
+    .cancelled-icon {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+
+    .error-icon svg, .cancelled-icon svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    .error-title, .cancelled-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .error-title { color: var(--error); }
+    .cancelled-title { color: var(--warning); }
+
+    .error-message, .cancelled-message {
       font-size: 14px;
-      color: #fc8181;
+      color: var(--text-light);
+      margin-bottom: 32px;
+      line-height: 1.5;
+      padding: 12px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 8px;
+    }
+
+    .cancelled-message {
+      background: rgba(245, 158, 11, 0.1);
     }
 
     .btn {
-      padding: 12px 24px;
+      display: inline-block;
+      padding: 12px 32px;
       border-radius: 8px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
-      border: none;
-      margin: 4px;
       transition: all 0.2s;
+      border: none;
+      margin: 0 8px;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
       color: white;
     }
 
     .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4);
     }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
     }
 
     .no-extension {
       display: none;
       margin-top: 24px;
       padding: 16px;
-      background: rgba(252, 129, 129, 0.1);
-      border: 1px solid rgba(252, 129, 129, 0.3);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
       border-radius: 8px;
+      font-size: 14px;
     }
 
     .no-extension a {
-      color: #667eea;
+      color: var(--primary-blue-light);
+    }
+
+    @media (max-width: 480px) {
+      .logo { width: 100px; height: 100px; }
+      .logo svg { width: 50px; height: 50px; }
+      .btn { display: block; width: 100%; margin: 8px 0; }
     }
   </style>
 </head>
 <body>
   <div class="launcher-container">
-    <div class="logo">⚡</div>
-    <h1>Rival Function Launcher</h1>
-    <div class="function-info" id="function-info">Loading...</div>
-
-    <!-- Loading State -->
     <div class="loading-state" id="loading-state">
-      <div class="spinner"></div>
-      <p class="status" id="status-text">Connecting to extension...</p>
+      <div class="logo-wrapper">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+      </div>
+      <div class="loading-bar">
+        <div class="loading-progress"></div>
+      </div>
+      <p class="status-text" id="status-text">Connecting to extension...</p>
+      <p class="function-info" id="function-info">Loading...</p>
     </div>
 
-    <!-- Error State -->
     <div class="error-state" id="error-state">
-      <h2>Execution Failed</h2>
-      <div class="error-message" id="error-message"></div>
-      <button class="btn btn-primary" id="retry-btn">Retry</button>
+      <div class="error-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+      <h2 class="error-title">Execution Failed</h2>
+      <p class="error-message" id="error-message"></p>
+      <button class="btn btn-primary" id="retry-btn">Try Again</button>
       <button class="btn btn-secondary" id="close-btn">Close</button>
     </div>
 
-    <!-- Cancelled State -->
     <div class="cancelled-state" id="cancelled-state">
-      <h2>Execution Cancelled</h2>
-      <p style="color: #a0aec0; margin-bottom: 24px;">You cancelled the function execution.</p>
+      <div class="cancelled-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+      </div>
+      <h2 class="cancelled-title">Cancelled</h2>
+      <p class="cancelled-message">Function execution was cancelled by user.</p>
       <button class="btn btn-primary" id="retry-cancelled-btn">Try Again</button>
       <button class="btn btn-secondary" id="close-cancelled-btn">Close</button>
     </div>
 
-    <!-- No Extension Warning -->
     <div class="no-extension" id="no-extension">
-      <p>Rival Extension not detected. Please <a href="#">install the extension</a> to use this launcher.</p>
+      <p>Rival Extension not detected. Please install the extension to use this launcher.</p>
     </div>
   </div>
 
@@ -180,7 +283,6 @@
     (function() {
       'use strict';
 
-      // DOM Elements
       const loadingState = document.getElementById('loading-state');
       const errorState = document.getElementById('error-state');
       const cancelledState = document.getElementById('cancelled-state');
@@ -189,8 +291,6 @@
       const functionInfo = document.getElementById('function-info');
       const errorMessage = document.getElementById('error-message');
 
-      // Parse function ID and version from URL
-      // Supports: /repoName/functionId?v=version or ?fn=functionId&v=version
       function parseUrl() {
         const path = window.location.pathname;
         const params = new URLSearchParams(window.location.search);
@@ -198,31 +298,20 @@
         let functionId = null;
         let version = null;
 
-        // Try path-based: /repoName/functionId?v=version
-        // GitHub Pages URLs have repo name as first path segment
         if (path && path !== '/' && path !== '/index.html') {
-          // Remove leading/trailing slashes and split
           const segments = path.replace(/^\//, '').replace(/\/$/, '').split('/');
-
-          // If on GitHub Pages (has repo name), functionId is second segment
-          // Otherwise functionId is first segment
           if (segments.length >= 2) {
-            // Assume first segment is repo name on GitHub Pages
-            functionId = segments.slice(1).join('/');  // Everything after repo name
+            functionId = segments.slice(1).join('/');
           } else if (segments.length === 1 && segments[0]) {
             functionId = segments[0];
           }
         }
 
-        // Try query param: ?fn=functionId
         if (!functionId) {
           functionId = params.get('fn') || params.get('functionId');
         }
 
-        // Version from query param
         version = params.get('v') || params.get('version');
-
-        // Path after functionId (optional)
         const pathParam = params.get('path');
 
         return { functionId, version, path: pathParam };
@@ -250,39 +339,23 @@
         noExtension.style.display = 'block';
       }
 
-      // Listen for messages from content script
       window.addEventListener('message', (event) => {
-        // Only accept messages from our content script
         if (event.source !== window) return;
         if (!event.data || !event.data.type) return;
 
         const { type, data } = event.data;
 
-        if (type === 'RIVAL_STATUS') {
-          updateStatus(data.status);
-        }
-
-        if (type === 'RIVAL_ERROR') {
-          showError(data.error);
-        }
-
-        if (type === 'RIVAL_CANCELLED') {
-          showCancelled();
-        }
-
+        if (type === 'RIVAL_STATUS') updateStatus(data.status);
+        if (type === 'RIVAL_ERROR') showError(data.error);
+        if (type === 'RIVAL_CANCELLED') showCancelled();
+        if (type === 'RIVAL_EXTENSION_READY') updateStatus('Waiting for confirmation...');
         if (type === 'RIVAL_INJECT_HTML') {
-          // Inject the HTML - this is the magic moment!
           document.open();
           document.write(data.html);
           document.close();
         }
-
-        if (type === 'RIVAL_EXTENSION_READY') {
-          updateStatus('Extension connected. Waiting for confirmation...');
-        }
       });
 
-      // Notify content script that page is ready
       function notifyReady() {
         const { functionId, version, path } = parseUrl();
 
@@ -293,13 +366,11 @@
 
         functionInfo.textContent = `${functionId} (v${version})`;
 
-        // Post message for content script to pick up
         window.postMessage({
           type: 'RIVAL_PAGE_READY',
           data: { functionId, version, path }
         }, '*');
 
-        // Set timeout to detect missing extension
         setTimeout(() => {
           if (statusText.textContent === 'Connecting to extension...') {
             showNoExtension();
@@ -307,7 +378,6 @@
         }, 3000);
       }
 
-      // Retry handlers
       document.getElementById('retry-btn').addEventListener('click', () => {
         errorState.style.display = 'none';
         loadingState.style.display = 'block';
@@ -325,7 +395,6 @@
       document.getElementById('close-btn').addEventListener('click', () => window.close());
       document.getElementById('close-cancelled-btn').addEventListener('click', () => window.close());
 
-      // Initialize
       notifyReady();
     })();
   </script>
