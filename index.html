@@ -190,7 +190,7 @@
       const errorMessage = document.getElementById('error-message');
 
       // Parse function ID and version from URL
-      // Supports: /functionId?v=version or ?fn=functionId&v=version
+      // Supports: /repoName/functionId?v=version or ?fn=functionId&v=version
       function parseUrl() {
         const path = window.location.pathname;
         const params = new URLSearchParams(window.location.search);
@@ -198,9 +198,20 @@
         let functionId = null;
         let version = null;
 
-        // Try path-based: /functionId?v=version
+        // Try path-based: /repoName/functionId?v=version
+        // GitHub Pages URLs have repo name as first path segment
         if (path && path !== '/' && path !== '/index.html') {
-          functionId = path.replace(/^\//, '').replace(/\/$/, '');
+          // Remove leading/trailing slashes and split
+          const segments = path.replace(/^\//, '').replace(/\/$/, '').split('/');
+
+          // If on GitHub Pages (has repo name), functionId is second segment
+          // Otherwise functionId is first segment
+          if (segments.length >= 2) {
+            // Assume first segment is repo name on GitHub Pages
+            functionId = segments.slice(1).join('/');  // Everything after repo name
+          } else if (segments.length === 1 && segments[0]) {
+            functionId = segments[0];
+          }
         }
 
         // Try query param: ?fn=functionId
