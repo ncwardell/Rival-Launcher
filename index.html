@@ -346,10 +346,24 @@
         if (type === 'RIVAL_CANCELLED') showCancelled();
         if (type === 'RIVAL_EXTENSION_READY') updateStatus('Waiting for confirmation...');
         if (type === 'RIVAL_INJECT_HTML') {
-          document.open();
-          document.write(data.html);
-          document.close();
-        }
+  let html = data.html;
+  
+  // Inject bridge script into HTML before writing
+  if (data.bridgeUrl) {
+    const bridgeScript = `<script src="${data.bridgeUrl}"></script>`;
+    if (html.includes('<head>')) {
+      html = html.replace('<head>', '<head>' + bridgeScript);
+    } else if (html.includes('<html>')) {
+      html = html.replace('<html>', '<html><head>' + bridgeScript + '</head>');
+    } else {
+      html = bridgeScript + html;
+    }
+  }
+  
+  document.open();
+  document.write(html);
+  document.close();
+}
       });
 
       function notifyReady() {
