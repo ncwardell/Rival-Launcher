@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rival Payment</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      padding: 0;
+    }
+
+    .payment-container {
+      width: 100%;
+    }
+
+    #payment-element {
+      min-height: 120px;
+    }
+
+    #payment-message {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    #payment-message.success {
+      color: #10b981;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .loading::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      margin-left: 10px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="payment-container">
+    <div id="payment-element">
+      <div class="loading">Loading payment form</div>
+    </div>
+    <div id="payment-message"></div>
+  </div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const STRIPE_PUBLISHABLE_KEY = 'pk_live_51OXOT8A0HF3xh7ccGiqeJuBIJzQ0dBvVW58O8AwzQpRxNe9wpT0k8B8lp7tArriOxeXNzZMGwMzt7cY3BtZjt8v000SM3rCTlB';
+
+    let stripe = null;
+    let elements = null;
+    let paymentElement = null;
+    let parentOrigin = null;
+
+    // Initialize Stripe with client secret
+    function initializeStripe(clientSecret) {
+      try {
+        if (!window.Stripe) {
+          throw new Error('Stripe.js not loaded');
+        }
+
+        stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        elements = stripe.elements({
+          clientSecret: clientSecret,
+          appearance: {
+            theme: 'stripe',
+            variables: {
+              colorPrimary: '#2563eb',
+              colorBackground: '#ffffff',
+              colorText: '#1e293b',
+              colorDanger: '#ef4444',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              borderRadius: '8px',
+              spacingUnit: '4px'
+            },
+            rules: {
+              '.Input': {
+                border: '1px solid #e2e8f0',
+                boxShadow: 'none'
+              },
+              '.Input:focus': {
+                border: '1px solid #2563eb',
+                boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.1)'
+              }
+            }
+          }
+        });
+
+        paymentElement = elements.create('payment', {
+          layout: 'tabs'
+        });
+
+        document.getElementById('payment-element').innerHTML = '';
+        paymentElement.mount('#payment-element');
+
+        paymentElement.on('ready', () => {
+          sendToParent({ type: 'STRIPE_READY' });
+        });
+
+        paymentElement.on('change', (event) => {
+          const messageEl = document.getElementById('payment-message');
+          if (event.error) {
+            messageEl.textContent = event.error.message;
+            messageEl.className = '';
+          } else {
+            messageEl.textContent = '';
+          }
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error('Stripe init error:', error);
+        document.getElementById('payment-element').innerHTML =
+          '<div style="color: #ef4444; text-align: center; padding: 20px;">Failed to load payment form</div>';
+        return { success: false, error: error.message };
+      }
+    }
+
+    // Confirm payment
+    async function confirmPayment() {
+      if (!stripe || !elements) {
+        return { success: false, error: 'Stripe not initialized' };
+      }
+
+      const messageEl = document.getElementById('payment-message');
+      messageEl.textContent = '';
+
+      try {
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: window.location.href
+          },
+          redirect: 'if_required'
+        });
+
+        if (error) {
+          messageEl.textContent = error.message;
+          messageEl.className = '';
+          return { success: false, error: error.message };
+        }
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          messageEl.textContent = 'Payment successful!';
+          messageEl.className = 'success';
+          return { success: true, status: 'succeeded' };
+        }
+
+        if (paymentIntent && paymentIntent.status === 'processing') {
+          messageEl.textContent = 'Payment processing...';
+          return { success: false, error: 'Payment is processing', status: 'processing' };
+        }
+
+        return { success: false, error: 'Unexpected payment state' };
+      } catch (error) {
+        console.error('Payment error:', error);
+        messageEl.textContent = error.message || 'Payment failed';
+        return { success: false, error: error.message };
+      }
+    }
+
+    // Send message to parent window
+    function sendToParent(message) {
+      if (window.parent && window.parent !== window) {
+        // Send to any origin since we're in an iframe
+        window.parent.postMessage(message, '*');
+      }
+    }
+
+    // Listen for messages from parent
+    window.addEventListener('message', async (event) => {
+      // Store the parent origin for responses
+      parentOrigin = event.origin;
+
+      const { type, data } = event.data || {};
+
+      switch (type) {
+        case 'INIT_STRIPE':
+          const initResult = initializeStripe(data.clientSecret);
+          sendToParent({ type: 'INIT_RESULT', data: initResult });
+          break;
+
+        case 'CONFIRM_PAYMENT':
+          const confirmResult = await confirmPayment();
+          sendToParent({ type: 'PAYMENT_RESULT', data: confirmResult });
+          break;
+
+        case 'PING':
+          sendToParent({ type: 'PONG' });
+          break;
+      }
+    });
+
+    // Notify parent that page is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      sendToParent({ type: 'PAYMENT_PAGE_READY' });
+    });
+
+    // Also send ready signal after a brief delay (in case DOMContentLoaded already fired)
+    setTimeout(() => {
+      sendToParent({ type: 'PAYMENT_PAGE_READY' });
+    }, 100);
+  </script>
+</body>
+</html>
